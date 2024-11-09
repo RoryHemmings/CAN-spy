@@ -1,0 +1,7 @@
+theme: jekyll-theme-modernist
+show_downloads: true
+
+title: CAN-Spy
+description: A practical hardware device and software tool for wirelessly monitoring and exploiting Controller Area Network (CAN) systems. Strictly for educational and security research purposes.
+
+# google_analytics:[Your Google Analytics tracking ID]
