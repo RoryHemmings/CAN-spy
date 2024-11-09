@@ -13,8 +13,12 @@ source pyvenv/bin/activate
 
 To install the package, run the following command **from the same directory as this file**.
 
-`pip install .`
+```
+pip install .
+```
 
 Now you can run the cli using the following command.
 
-`can-spy`
+```
+can-spy
+```
