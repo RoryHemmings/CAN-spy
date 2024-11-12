@@ -92,9 +92,10 @@ My project is composed of three components:
 I have no other teammates and thus no partitioning is required.
 
 In order to create the demo setup, I will need:
-- A 3.3v servo motor
-- A 3.3v arduino board which can control the servo while listening on CAN
-- Another 3.3v arduino board with an IMU which will serve as the controller for the servo
+- A servo motor
+- An arduino board which can control the servo while listening on CAN
+- Another arduino board with an IMU which will serve as the controller for the servo
+- two MPC 2515 CAN modules to actually write to the CAN bus
 
 With these materials, I will create a CAN network in which the angle of the servo matches the orientation of the IMU. Every 20 milliseconds or so, a measurement will be taken from the IMU and a corresponding CAN message will be sent requesting for the angle to be matched.
 
