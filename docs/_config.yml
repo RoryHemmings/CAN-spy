@@ -1,5 +1,4 @@
-# remote_theme: pmarsceill/just-the-docs
-remote_theme: daattali/beautiful-jekyll
+remote_theme: pmarsceill/just-the-docs
 show_downloads: true
 
 title: CAN-Spy

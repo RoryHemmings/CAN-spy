@@ -48,3 +48,24 @@ Attacks
 	- data field - actual data
 	- crc - checksum to guarantee validity
 	- end of frame marker
+
+# Attacks
+- Frame attacks 
+	- spoofing - device pretends to be another one
+	- 
+- Protocol Attacks
+	- attack defined behavior of protocol itsself
+	- malware hijacking device and controlling can pins
+
+- defense techniques
+  - intrusion detection
+  - encryption
+  - security gateways
+  - update can hardware
+
+# References
+- https://gedare.github.io/pdf/bloom_weepingcan_2021.pdf
+- https://www.canislabs.com/downloads/2020-02-14-White-Paper-CAN-Security.pdf
+- https://medium.com/@yogeshojha/car-hacking-101-practical-guide-to-exploiting-can-bus-using-instrument-cluster-simulator-part-i-cd88d3eb4a53
+- https://github.com/arduino/ArduinoCore-renesas/tree/main/libraries/Arduino_CAN
+- https://reference.arduino.cc/reference/en/libraries/wifinina/
