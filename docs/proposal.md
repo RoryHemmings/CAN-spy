@@ -113,6 +113,8 @@ The paper entitled "CAN Bus Security" authored by Dr. Ken Tindell serves as an o
 
 The paper "WeepingCAN: A stealthy CAN Bus-off Attack" provides more information on CAN hacking methods, which I may be able to implement if time permits.
 
+The paper "Physical Layer Data Manipulation Attacks on the CAN Bus" provides information about voltage level attacks that I may be able to perform using my device.
+
 ### 9.b. Datasets
 
 <!-- List datasets that you have identified and plan to use. Provide references (with full citation in the References section below). -->
@@ -136,6 +138,7 @@ Other than that, everything else will be built from scratch.
 
 1. Tindell K, (2020). "CAN Security: CAN Protocol Security White Paper". https://www.canislabs.com/downloads/2020-02-14-White-Paper-CAN-Security.pdf
 2. Bloom B. (2021). "WeepingCAN: A stealthy CAN Bus-off Attack". https://gedare.github.io/pdf/bloom_weepingcan_2021.pdf
+3. Mohammed AZ, Man Y, Gerdes R, et al. (2022). "Physical Layer Data Manipulation Attacks on the CAN Bus". https://beerkay.github.io/papers/Berkay2022PhyManipulationAutoSec.pdf
 3. https://docs.arduino.cc/learn/communication/can/
 4. https://github.com/arduino/ArduinoCore-renesas/tree/main/libraries/Arduino_CAN
 5. https://reference.arduino.cc/reference/en/libraries/wifinina/ 
