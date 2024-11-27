@@ -2,6 +2,13 @@
 #include <Servo.h>
 #include <CAN.h>
 
+const unsigned long SPI_CS_PIN = 10;
+const unsigned long IRQ_PIN = 2;
+
+const unsigned long SPI_FREQ = 500e3;
+const unsigned long CAN_BITRATE = 500e3;
+const unsigned long MPC2515_CLOCK_FREQ = 8e6;
+
 const unsigned long loop_interval = 10; // tick every 10 milliseconds
 unsigned long prev_millis = 0;
 unsigned long cur_millis = 0;
@@ -25,10 +32,22 @@ void setup()
     Serial.begin(9600);
     while (!Serial); /* Wait till serial is ready */
 
-    if (!CAN.begin(500E3)) {
-        Serial.println("CAN failed to start.");
-        while (1);
+    // Set custom CS and Interrupt pin
+    CAN.setPins(SPI_CS_PIN, IRQ_PIN);
+
+    // Set SPI Frequency
+    CAN.setSPIFrequency(SPI_FREQ); 
+
+    // Set MPC2515 Clock Frequency
+    CAN.setClockFrequency(MPC2515_CLOCK_FREQ);
+
+    while (!CAN.begin(CAN_BITRATE)) {
+        Serial.println("failed to start CAN.");
+        delay(1000); // Retry after 1 second
+        // while (1);
     }
+
+    Serial.println("started CAN.");
 
     CAN.onReceive(can_rx_interrupt);
 }
@@ -65,29 +84,39 @@ void loop()
         set_servo_target(random(0, 180));
         rand_prev_millis = rand_cur_millis;
     }
+
+    // int size = CAN.parsePacket();
+    // Serial.println(size);
 }
 
 void can_rx_interrupt(int len) {
-    Serial.print("Received Packet");
+    Serial.print("Received Packet ");
 
     if (CAN.packetRtr()) {
         Serial.print("RTR ");
     }
 
-    Serial.print("packet with id 0x");
+    Serial.print("id 0x");
     Serial.print(CAN.packetId(), HEX);
 
     if (CAN.packetRtr()) {
-        Serial.print(" and requested length ");
+        Serial.print(" requested length ");
         Serial.println(CAN.packetDlc());
     } else {
-        Serial.print(" and length ");
+        Serial.print(" length ");
         Serial.println(len);
 
         // only print packet data for non-RTR packets
+        float buf[3];
         while (CAN.available()) {
-            Serial.print((char)CAN.read());
+            // if (available >= 3) {
+            //     buf[0] = CAN.read();
+            //     buf[1] = CAN.read();
+            //     buf[2] = CAN.read();
+            // }
+            Serial.println((float)CAN.read());
         }
+        // Serial.println(buf[2]);
         Serial.println();
     }
 
