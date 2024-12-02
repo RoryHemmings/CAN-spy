@@ -6,10 +6,14 @@
 
 #ifdef DEBUG
 #define DEBUG_PRINT(__X__) Serial.print(__X__)
+#define DEBUG_PRINT_FMT(__X__, __FMT__) Serial.print(__X__, __FMT__)
 #define DEBUG_PRINTLN(__X__) Serial.println(__X__)
+#define DEBUG_PRINTLN_FMT(__X__, __FMT__) Serial.println(__X__, __FMT__)
 #else
 #define DEBUG_PRINT(__X__)
+#define DEBUG_PRINT_FMT(__X__, __FMT__)
 #define DEBUG_PRINTLN(__X__)
+#define DEBUG_PRINTLN_FMT(__X__, __FMT__)
 #endif
 
 const unsigned int SPI_CS_PIN = 10;
@@ -59,7 +63,7 @@ void can_rx_interrupt(int len) {
     }
 
     DEBUG_PRINT("id 0x");
-    DEBUG_PRINT(CAN.packetId(), HEX);
+    DEBUG_PRINT_FMT(CAN.packetId(), HEX);
 
     if (CAN.packetRtr()) {
         DEBUG_PRINT(" requested length ");
@@ -69,7 +73,7 @@ void can_rx_interrupt(int len) {
         DEBUG_PRINTLN(len);
 
         // only print packet data for non-RTR packets
-        float buf[3];
+        // float buf[3];
         while (CAN.available()) {
             // if (available >= 3) {
             //     buf[0] = CAN.read();
