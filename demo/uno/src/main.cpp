@@ -2,8 +2,18 @@
 #include <Servo.h>
 #include <CAN.h>
 
-const unsigned long SPI_CS_PIN = 10;
-const unsigned long IRQ_PIN = 2;
+#define DEBUG
+
+#ifdef DEBUG
+#define DEBUG_PRINT(__X__) Serial.print(__X__)
+#define DEBUG_PRINTLN(__X__) Serial.println(__X__)
+#else
+#define DEBUG_PRINT(__X__)
+#define DEBUG_PRINTLN(__X__)
+#endif
+
+const unsigned int SPI_CS_PIN = 10;
+const unsigned int IRQ_PIN = 2;
 
 const unsigned long SPI_FREQ = 500e3;
 const unsigned long CAN_BITRATE = 500e3;
@@ -23,35 +33,6 @@ const unsigned long rand_loop_interval = 1000;
 unsigned long rand_prev_millis = 0;
 unsigned long rand_cur_millis = 0;
 
-void can_rx_interrupt(int len);
-
-void setup()
-{
-    servo.attach(servo_pin);
-
-    Serial.begin(9600);
-    while (!Serial); /* Wait till serial is ready */
-
-    // Set custom CS and Interrupt pin
-    CAN.setPins(SPI_CS_PIN, IRQ_PIN);
-
-    // Set SPI Frequency
-    CAN.setSPIFrequency(SPI_FREQ); 
-
-    // Set MPC2515 Clock Frequency
-    CAN.setClockFrequency(MPC2515_CLOCK_FREQ);
-
-    while (!CAN.begin(CAN_BITRATE)) {
-        Serial.println("failed to start CAN.");
-        delay(1000); // Retry after 1 second
-        // while (1);
-    }
-
-    Serial.println("started CAN.");
-
-    CAN.onReceive(can_rx_interrupt);
-}
-
 double clamp_angle(double angle) {
     return min(max(0, angle), 180);
 }
@@ -70,6 +51,66 @@ void update_servo() {
     servo.write(servo_angle);
 }
 
+void can_rx_interrupt(int len) {
+    DEBUG_PRINT("Received Packet ");
+
+    if (CAN.packetRtr()) {
+        DEBUG_PRINT("RTR ");
+    }
+
+    DEBUG_PRINT("id 0x");
+    DEBUG_PRINT(CAN.packetId(), HEX);
+
+    if (CAN.packetRtr()) {
+        DEBUG_PRINT(" requested length ");
+        DEBUG_PRINTLN(CAN.packetDlc());
+    } else {
+        DEBUG_PRINT(" length ");
+        DEBUG_PRINTLN(len);
+
+        // only print packet data for non-RTR packets
+        float buf[3];
+        while (CAN.available()) {
+            // if (available >= 3) {
+            //     buf[0] = CAN.read();
+            //     buf[1] = CAN.read();
+            //     buf[2] = CAN.read();
+            // }
+            DEBUG_PRINTLN((float)CAN.read());
+        }
+        // DEBUG_PRINTLN(buf[2]);
+        DEBUG_PRINTLN();
+    }
+
+    DEBUG_PRINTLN();
+}
+
+void setup()
+{
+    servo.attach(servo_pin);
+
+    Serial.begin(9600);
+    while (!Serial); /* Wait till serial is ready */
+
+    // Set custom CS and Interrupt pin
+    CAN.setPins(SPI_CS_PIN, IRQ_PIN);
+
+    // Set SPI Frequency
+    CAN.setSPIFrequency(SPI_FREQ); 
+
+    // Set MPC2515 Clock Frequency
+    CAN.setClockFrequency(MPC2515_CLOCK_FREQ);
+
+    while (!CAN.begin(CAN_BITRATE)) {
+        DEBUG_PRINTLN("failed to start CAN.");
+        delay(1000); // Retry after 1 second
+    }
+
+    DEBUG_PRINTLN("started CAN.");
+
+    CAN.onReceive(can_rx_interrupt);
+}
+
 void loop()
 {
     cur_millis = millis();
@@ -86,39 +127,5 @@ void loop()
     }
 
     // int size = CAN.parsePacket();
-    // Serial.println(size);
-}
-
-void can_rx_interrupt(int len) {
-    Serial.print("Received Packet ");
-
-    if (CAN.packetRtr()) {
-        Serial.print("RTR ");
-    }
-
-    Serial.print("id 0x");
-    Serial.print(CAN.packetId(), HEX);
-
-    if (CAN.packetRtr()) {
-        Serial.print(" requested length ");
-        Serial.println(CAN.packetDlc());
-    } else {
-        Serial.print(" length ");
-        Serial.println(len);
-
-        // only print packet data for non-RTR packets
-        float buf[3];
-        while (CAN.available()) {
-            // if (available >= 3) {
-            //     buf[0] = CAN.read();
-            //     buf[1] = CAN.read();
-            //     buf[2] = CAN.read();
-            // }
-            Serial.println((float)CAN.read());
-        }
-        // Serial.println(buf[2]);
-        Serial.println();
-    }
-
-    Serial.println();
+    // DEBUG_PRINTLN(size);
 }
