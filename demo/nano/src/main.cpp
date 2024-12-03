@@ -2,7 +2,7 @@
 #include <Arduino_LSM6DS3.h>
 #include <CAN.h>
 
-#define DEBUG
+// #define DEBUG
 
 #ifdef DEBUG
 #define DEBUG_PRINT(__X__) Serial.print(__X__)
@@ -23,10 +23,17 @@ const unsigned long SPI_FREQ = 500e3;
 const unsigned long CAN_BITRATE = 500e3;
 const unsigned long MPC2515_CLOCK_FREQ = 8e6;
 
-// const unsigned long loop_interval = 10; // tick every 10 milliseconds
-const unsigned long loop_interval = 1000;
+#ifdef DEBUG
+const unsigned long loop_interval = 1000; // tick every second
+#else
+const unsigned long loop_interval = 10; // tick every 10 milliseconds
+#endif
+
+
 unsigned long prev_millis = 0;
 unsigned long cur_millis = 0;
+
+const int MAX_ANGLE = 90;
 
 void setup()
 {
@@ -61,8 +68,12 @@ void setup()
 void send_packet(float ax, float ay, float az) {
     DEBUG_PRINTLN("Sending Packet");
 
+    int8_t angle = (int8_t) (ay*MAX_ANGLE);
+    DEBUG_PRINT("Angle: ");
+    DEBUG_PRINTLN(angle);
+
     CAN.beginPacket(0x12);
-    CAN.write((byte*) &ay, 4); // Write all 4 bytes of ay
+    CAN.write((byte) angle); // Write all 4 bytes of ay
     CAN.endPacket();
 
     DEBUG_PRINTLN("Sent Packet");
