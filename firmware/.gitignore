@@ -1,1 +1,3 @@
 .pio
+lib/*
+include/secrets.h
