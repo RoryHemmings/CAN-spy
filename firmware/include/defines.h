@@ -4,7 +4,7 @@
 #include "secrets.h"
 
 #define DEBUG
-#define APSSID "CAN SPY AP"
+#define AP_SSID "CAN_SPY_AP"
 
 #ifdef DEBUG
 #define DEBUG_PRINT(__X__) Serial.print(__X__)

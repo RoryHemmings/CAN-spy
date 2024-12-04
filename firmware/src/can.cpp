@@ -62,5 +62,5 @@ void init_can()
     }
 
     // interrupts not supported by esp8266
-    // CAN.onReceive(can_rx_interrupt);
+    CAN.onReceive(can_rx_interrupt);
 }

@@ -1,19 +1,63 @@
 #include <Arduino.h>
-#include <ESP8266WebServer.h>
-#include <ESP8266WiFi.h>
-#include <WiFiClient.h>
+#include <SPI.h>
+#include <WebSocketsServer.h>
+#include <WiFiNINA.h>
 
 #include "can.h"
 #include "defines.h"
 
-const char *ssid = APPSK;
-const char *password = APPSK;
+// SSID and password for access point
+const char *ssid = AP_SSID;
+const char *pass = AP_PASS;
 
-ESP8266WebServer server(81);
+// Device ip address on access point
+const IPAddress ip_address(10, 0, 0, 1);
 
-void handleRoot()
+const int led = LED_BUILTIN;
+
+WiFiServer server(80);
+int status = WL_IDLE_STATUS;
+
+void printWiFiStatus()
 {
-    server.send(200, "text/html", "<h1>You are connected</h1>");
+    // print the SSID of the network you're attached to:
+    Serial.print("SSID: ");
+    Serial.println(WiFi.SSID());
+
+    // print your WiFi shield's IP address:
+    IPAddress ip = WiFi.localIP();
+    Serial.print("IP Address: ");
+    Serial.println(ip);
+
+    // print where to go in a browser:
+    Serial.print("To see this page in action, open a browser to http://");
+    Serial.println(ip);
+}
+
+void init_wifi()
+{
+    if (WiFi.status() == WL_NO_MODULE) {
+        Serial.println("Communication with WiFi module failed!");
+
+        while (true)
+            ;
+    }
+
+    WiFi.config(ip_address);
+
+    Serial.print("Creating access point named: ");
+    Serial.println(ssid);
+
+    status = WiFi.beginAP(ssid, pass);
+    if (status != WL_AP_LISTENING) {
+        Serial.println("Creating access point failed");
+
+        while (true)
+            ;
+    }
+
+    // you're connected now, so print out the status
+    printWiFiStatus();
 }
 
 void setup()
@@ -25,22 +69,25 @@ void setup()
         ; /* Wait till serial is ready */
     #endif
 
-    Serial.println();
-    Serial.print("Configuring access point...");
-    /* You can remove the password parameter if you want the AP to be open. */
-    WiFi.softAP(ssid, password);
+    pinMode(led, OUTPUT);
 
-    IPAddress myIP = WiFi.softAPIP();
-    Serial.print("AP IP address: ");
-    Serial.println(myIP);
-    server.on("/", handleRoot);
-    server.begin();
-    Serial.println("HTTP server started");
-
+    init_wifi();
     // init_can();
 }
 
 void loop()
 {
-    server.handleClient();
+    // compare the previous status to the current status
+    if (status != WiFi.status()) {
+        // it has changed update the variable
+        status = WiFi.status();
+
+        if (status == WL_AP_CONNECTED) {
+            // a device has connected to the AP
+            Serial.println("Device connected to AP");
+        } else {
+            // a device has disconnected from the AP, and we are back in listening mode
+            Serial.println("Device disconnected from AP");
+        }
+    }
 }
