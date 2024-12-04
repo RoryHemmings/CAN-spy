@@ -15,7 +15,7 @@ const IPAddress ip_address(10, 0, 0, 1);
 
 const int led = LED_BUILTIN;
 
-WiFiServer server(80);
+WebSocketsServer server(81);
 int status = WL_IDLE_STATUS;
 
 void printWiFiStatus()
@@ -60,6 +60,53 @@ void init_wifi()
     printWiFiStatus();
 }
 
+void handle_websocket_event(uint8_t num, WStype_t type, uint8_t * payload, size_t length) {
+
+    switch(type) {
+        case WStype_DISCONNECTED:
+            Serial.print("[");
+            Serial.print(num);
+            Serial.println("] Disconnected");
+            break;
+        case WStype_CONNECTED:
+            {
+                // IPAddress ip = server.remoteIP(num);
+                Serial.print("[");
+                Serial.print(num);
+                Serial.print("] Connected url: ");
+                Serial.println((char*) payload);
+
+		        // send message to client
+		        server.sendTXT(num, "Connected");
+            }
+            break;
+        case WStype_TEXT:
+            // USE_SERIAL.printf("[%u] get Text: %s\n", num, payload);
+
+            // send message to client
+            // server.sendTXT(num, "message here");
+
+            // send data to all connected clients
+            // server.broadcastTXT("message here");
+            break;
+        case WStype_BIN:
+            // USE_SERIAL.printf("[%u] get binary length: %u\n", num, length);
+            // hexdump(payload, length);
+
+            // send message to client
+            // server.sendBIN(num, payload, length);
+            break;
+	case WStype_ERROR:			
+	case WStype_FRAGMENT_TEXT_START:
+	case WStype_FRAGMENT_BIN_START:
+	case WStype_FRAGMENT:
+	case WStype_FRAGMENT_FIN:
+    case WStype_PING:
+    case WStype_PONG:
+	    break;
+    }
+}
+
 void setup()
 {
     Serial.begin(9600);
@@ -73,6 +120,11 @@ void setup()
 
     init_wifi();
     // init_can();
+
+    delay(10000);
+
+    server.begin();
+    server.onEvent(handle_websocket_event);
 }
 
 void loop()
@@ -89,5 +141,9 @@ void loop()
             // a device has disconnected from the AP, and we are back in listening mode
             Serial.println("Device disconnected from AP");
         }
+    }
+
+    if (status == WL_AP_CONNECTED) {
+        server.loop();
     }
 }

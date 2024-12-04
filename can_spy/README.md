@@ -4,7 +4,7 @@ This is the python package used by [CAN-Spy](https://github.com/RoryHemmings/CAN
 
 # Installation and Usage
 
-First we recommend creating a virtual environment.
+First we recommend creating a virtual environment **outside the directory of this file**.
 
 ```bash
 python -m venv pyvenv
