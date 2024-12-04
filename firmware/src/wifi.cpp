@@ -15,59 +15,59 @@ static void printMacAddress(byte mac[])
 {
     for (int i = 5; i >= 0; i--) {
         if (mac[i] < 16) {
-            Serial.print("0");
+            DEBUG_PRINT("0");
         }
-        Serial.print(mac[i], HEX);
+        DEBUG_PRINT_FMT(mac[i], HEX);
         if (i > 0) {
-            Serial.print(":");
+            DEBUG_PRINT(":");
         }
     }
-    Serial.println();
+    DEBUG_PRINTLN();
 }
 
 static void printWifiData()
 {
     // print your board's IP address:
     IPAddress ip = WiFi.localIP();
-    Serial.print("IP Address: ");
-    Serial.println(ip);
-    Serial.println(ip);
+    DEBUG_PRINT("IP Address: ");
+    DEBUG_PRINTLN(ip);
+    DEBUG_PRINTLN(ip);
 
     // print your MAC address:
     byte mac[6];
     WiFi.macAddress(mac);
-    Serial.print("MAC address: ");
+    DEBUG_PRINT("MAC address: ");
     printMacAddress(mac);
 }
 
 static void printCurrentNet()
 {
     // print the SSID of the network you're attached to:
-    Serial.print("SSID: ");
-    Serial.println(WiFi.SSID());
+    DEBUG_PRINT("SSID: ");
+    DEBUG_PRINTLN(WiFi.SSID());
 
     // print the MAC address of the router you're attached to:
     byte bssid[6];
     WiFi.BSSID(bssid);
-    Serial.print("BSSID: ");
+    DEBUG_PRINT("BSSID: ");
     printMacAddress(bssid);
 
     // print the received signal strength:
     long rssi = WiFi.RSSI();
-    Serial.print("signal strength (RSSI):");
-    Serial.println(rssi);
+    DEBUG_PRINT("signal strength (RSSI):");
+    DEBUG_PRINTLN(rssi);
 
     // print the encryption type:
     byte encryption = WiFi.encryptionType();
-    Serial.print("Encryption Type:");
-    Serial.println(encryption, HEX);
-    Serial.println();
+    DEBUG_PRINT("Encryption Type:");
+    DEBUG_PRINTLN_FMT(encryption, HEX);
+    DEBUG_PRINTLN();
 }
 
 void init_wifi()
 {
     if (WiFi.status() == WL_NO_MODULE) {
-        Serial.println("Communication with WiFi module failed!");
+        DEBUG_PRINTLN("Communication with WiFi module failed!");
 
         while (true)
             ;
@@ -76,16 +76,16 @@ void init_wifi()
     // WiFi.config(ip_address);
 
     while (status != WL_CONNECTED) {
-        Serial.print("Attempting to connect to WPA SSID: ");
-        Serial.println(ssid);
+        DEBUG_PRINT("Attempting to connect to WPA SSID: ");
+        DEBUG_PRINTLN(ssid);
 
         status = WiFi.begin(ssid, pass);
 
         delay(5000);
-        Serial.print(".");
+        DEBUG_PRINT(".");
     }
 
-    Serial.println("Connection Successful");
+    DEBUG_PRINTLN("Connection Successful");
 
     printCurrentNet();
     printWifiData();

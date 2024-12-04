@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import asyncio
+import binascii
 import signal
 import websockets
 
@@ -12,10 +13,14 @@ WS_SERVER_PORT = 3005
 
 
 async def echo(websocket):
-    print("New client connected")
     async for message in websocket:
-        print(f"Received: {message}")
-        await websocket.send(f"Echo: {message}")
+        if isinstance(message, bytes):
+            print("Received binary message:")
+            print(binascii.hexlify(message).decode('utf-8'))  # Hexdump the binary message
+            # await websocket.send(f"Binary message received, length: {len(message)}")
+        else:
+            print(f"Received text message: {message}")
+            # await websocket.send(f"Echo: {message}")
 
 async def start_websocket_server():
     stop_event = asyncio.Event()
