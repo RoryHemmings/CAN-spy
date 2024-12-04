@@ -1,43 +1,59 @@
 #!/usr/bin/python3
 
 import asyncio
+import signal
 import websockets
 
 from can_spy.can_spy import CanSpy
 from can_spy.exploits.replay import Replay
 
 
-async def connect_to_websocket():
-    # uri = "wss://10.0.0.1:81"
-    uri = "ws://10.0.0.1:81"
+WS_SERVER_PORT = 3005
+
+
+async def echo(websocket):
+    print("New client connected")
+    async for message in websocket:
+        print(f"Received: {message}")
+        await websocket.send(f"Echo: {message}")
+
+async def start_websocket_server():
+    stop_event = asyncio.Event()
+
+    def shutdown_signal():
+        print("\nServer stopped manually.")
+        stop_event.set()
+
+     # Handle Keyboard interrupt for graceful shutdown
+    loop = asyncio.get_event_loop()
+    loop.add_signal_handler(signal.SIGINT, shutdown_signal)
+    loop.add_signal_handler(signal.SIGTERM, shutdown_signal)    
+
+    # Start the server
+    server = await websockets.serve(echo, "0.0.0.0", WS_SERVER_PORT)
+    print(f"WebSocket server is running on ws://0.0.0.0:{WS_SERVER_PORT}")
 
     try:
-        async with websockets.connect(uri) as websocket:
-            print("Connected to WebSocket server")
-
-            # Send a message
-            await websocket.send("Hello, WebSocket!")
-            print("Message sent: Hello, WebSocket!")
-
-            # Receive a response
-            response = await websocket.recv()
-            print(f"Response received: {response}")
-
-    except websockets.exceptions.ConnectionClosed as e:
-        print(f"Connection closed: {e}")
-    except Exception as e:
-        print(f"An error occurred: {e}")
-
+        await stop_event.wait()  # Wait until stop_event is set
+    finally:
+        server.close()
+        await server.wait_closed()
 
 def main():
-    device = CanSpy()
-    print(device.add(1, 2))
+    """CLI script entry point"""
+    # device = CanSpy()
+    # print(device.add(1, 2))
 
-    replay_attack = Replay()
-    replay_attack.start()
+    # replay_attack = Replay()
+    # replay_attack.start()
 
-    asyncio.run(connect_to_websocket())
-
-
+    try:
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(start_websocket_server())
+    except KeyboardInterrupt:
+        print("\nServer stopped manually.")
+    finally:
+        loop.close()
+    
 if __name__ == "__main__":
     main()

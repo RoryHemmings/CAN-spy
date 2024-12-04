@@ -1,37 +1,76 @@
 #include <Arduino.h>
 #include <SPI.h>
-#include <WebSocketsServer.h>
 #include <WiFiNINA.h>
+#include <WebSocketsClient.h>
 
 #include "can.h"
 #include "defines.h"
 
 // SSID and password for access point
-const char *ssid = AP_SSID;
-const char *pass = AP_PASS;
-
-// Device ip address on access point
-const IPAddress ip_address(10, 0, 0, 1);
+const char *ssid = WIFI_SSID;
+const char *pass = WIFI_PASS;
 
 const int led = LED_BUILTIN;
 
-WebSocketsServer server(81);
+// Device ip address on access point
+IPAddress ip_address(192, 168, 1, 10);
 int status = WL_IDLE_STATUS;
 
-void printWiFiStatus()
+WiFiClient client;
+WebSocketsClient websocket; 
+const int WEBSOCKET_RECONNECT_INTERVAL = 5000;
+
+void printMacAddress(byte mac[])
+{
+    for (int i = 5; i >= 0; i--) {
+        if (mac[i] < 16) {
+            Serial.print("0");
+        }
+        Serial.print(mac[i], HEX);
+        if (i > 0) {
+            Serial.print(":");
+        }
+    }
+    Serial.println();
+}
+
+void printWifiData()
+{
+    // print your board's IP address:
+    IPAddress ip = WiFi.localIP();
+    Serial.print("IP Address: ");
+    Serial.println(ip);
+    Serial.println(ip);
+
+    // print your MAC address:
+    byte mac[6];
+    WiFi.macAddress(mac);
+    Serial.print("MAC address: ");
+    printMacAddress(mac);
+}
+
+void printCurrentNet()
 {
     // print the SSID of the network you're attached to:
     Serial.print("SSID: ");
     Serial.println(WiFi.SSID());
 
-    // print your WiFi shield's IP address:
-    IPAddress ip = WiFi.localIP();
-    Serial.print("IP Address: ");
-    Serial.println(ip);
+    // print the MAC address of the router you're attached to:
+    byte bssid[6];
+    WiFi.BSSID(bssid);
+    Serial.print("BSSID: ");
+    printMacAddress(bssid);
 
-    // print where to go in a browser:
-    Serial.print("To see this page in action, open a browser to http://");
-    Serial.println(ip);
+    // print the received signal strength:
+    long rssi = WiFi.RSSI();
+    Serial.print("signal strength (RSSI):");
+    Serial.println(rssi);
+
+    // print the encryption type:
+    byte encryption = WiFi.encryptionType();
+    Serial.print("Encryption Type:");
+    Serial.println(encryption, HEX);
+    Serial.println();
 }
 
 void init_wifi()
@@ -43,67 +82,55 @@ void init_wifi()
             ;
     }
 
-    WiFi.config(ip_address);
+    // WiFi.config(ip_address);
 
-    Serial.print("Creating access point named: ");
-    Serial.println(ssid);
+    while (status != WL_CONNECTED) {
+        Serial.print("Attempting to connect to WPA SSID: ");
+        Serial.println(ssid);
 
-    status = WiFi.beginAP(ssid, pass);
-    if (status != WL_AP_LISTENING) {
-        Serial.println("Creating access point failed");
+        status = WiFi.begin(ssid, pass);
 
-        while (true)
-            ;
+        delay(5000);
+        Serial.print(".");
     }
 
-    // you're connected now, so print out the status
-    printWiFiStatus();
+    Serial.println("Connection Successful");
+
+    printCurrentNet();
+    printWifiData();
 }
 
-void handle_websocket_event(uint8_t num, WStype_t type, uint8_t * payload, size_t length) {
+void handle_websocket_event(WStype_t type, uint8_t *payload, size_t length)
+{
+    switch (type) {
+    case WStype_DISCONNECTED:
+        Serial.println("[WSc] Disconnected!");
+        break;
+    case WStype_CONNECTED:
+        Serial.println("[WSc] Connected!");
 
-    switch(type) {
-        case WStype_DISCONNECTED:
-            Serial.print("[");
-            Serial.print(num);
-            Serial.println("] Disconnected");
-            break;
-        case WStype_CONNECTED:
-            {
-                // IPAddress ip = server.remoteIP(num);
-                Serial.print("[");
-                Serial.print(num);
-                Serial.print("] Connected url: ");
-                Serial.println((char*) payload);
+        // send message to server when Connected
+        websocket.sendTXT("Connected");
+        break;
+    case WStype_TEXT:
+        Serial.print("[WSc] get text:");
+        Serial.println((char *)payload);
 
-		        // send message to client
-		        server.sendTXT(num, "Connected");
-            }
-            break;
-        case WStype_TEXT:
-            // USE_SERIAL.printf("[%u] get Text: %s\n", num, payload);
-
-            // send message to client
-            // server.sendTXT(num, "message here");
-
-            // send data to all connected clients
-            // server.broadcastTXT("message here");
-            break;
-        case WStype_BIN:
-            // USE_SERIAL.printf("[%u] get binary length: %u\n", num, length);
-            // hexdump(payload, length);
-
-            // send message to client
-            // server.sendBIN(num, payload, length);
-            break;
-	case WStype_ERROR:			
-	case WStype_FRAGMENT_TEXT_START:
-	case WStype_FRAGMENT_BIN_START:
-	case WStype_FRAGMENT:
-	case WStype_FRAGMENT_FIN:
+        // send message to server
+        // websocket.sendTXT("message here");
+        break;
+    case WStype_BIN:
+        // send data to server
+        // websocket.sendBIN(payload, length);
+        break;
+    case WStype_ERROR:
+    case WStype_FRAGMENT_TEXT_START:
+    case WStype_FRAGMENT_BIN_START:
+    case WStype_FRAGMENT:
     case WStype_PING:
     case WStype_PONG:
-	    break;
+    case WStype_FRAGMENT_FIN:
+        break;
     }
 }
 
@@ -121,29 +148,18 @@ void setup()
     init_wifi();
     // init_can();
 
-    delay(10000);
+    websocket.begin(C2_ADDR, C2_PORT);
+    websocket.onEvent(handle_websocket_event);
+    websocket.setReconnectInterval(WEBSOCKET_RECONNECT_INTERVAL);
 
-    server.begin();
-    server.onEvent(handle_websocket_event);
+    Serial.println("C2 Server Target:");
+    Serial.print("Address: ");
+    Serial.println(C2_ADDR);
+    Serial.print("Port: ");
+    Serial.println(C2_PORT);
 }
 
 void loop()
 {
-    // compare the previous status to the current status
-    if (status != WiFi.status()) {
-        // it has changed update the variable
-        status = WiFi.status();
-
-        if (status == WL_AP_CONNECTED) {
-            // a device has connected to the AP
-            Serial.println("Device connected to AP");
-        } else {
-            // a device has disconnected from the AP, and we are back in listening mode
-            Serial.println("Device disconnected from AP");
-        }
-    }
-
-    if (status == WL_AP_CONNECTED) {
-        server.loop();
-    }
+    websocket.loop();
 }
