@@ -18,11 +18,10 @@ void setup()
     while (!Serial)
         ; /* Wait till serial is ready */
 #endif
+    init_can();
 
     init_wifi();
     init_websocket();
-
-    // init_can();
 }
 
 void loop()

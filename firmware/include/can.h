@@ -3,7 +3,7 @@
 
 typedef struct {
     byte *data;
-    int id;
+    long id;
     size_t len;
 } can_packet;
 

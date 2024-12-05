@@ -25,6 +25,8 @@ void init_websocket()
     websocket.onEvent(handle_websocket_event);
     websocket.setReconnectInterval(WEBSOCKET_RECONNECT_INTERVAL);
 
+    can_packet_queue.clean();
+
     DEBUG_PRINTLN("C2 Server Target:");
     DEBUG_PRINT("Address: ");
     DEBUG_PRINTLN(C2_ADDR);
@@ -63,8 +65,8 @@ static void broadcast_available()
         byte buf[buf_len];
 
         int marker = 0;
-        memcpy(buf, &(packet.id), sizeof(int));
-        marker += sizeof(int);
+        memcpy(buf, &(packet.id), sizeof(long));
+        marker += sizeof(long);
 
         memcpy(buf + marker, &(packet.len), sizeof(size_t));
         marker += sizeof(size_t);
