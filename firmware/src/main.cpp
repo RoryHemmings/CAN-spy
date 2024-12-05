@@ -34,10 +34,12 @@ void loop()
         packet_one.data = (byte *)"hello";
         packet_one.len = 6;
         packet_one.id = 0x12;
+        packet_one.timestamp = micros();
 
         packet_two.data = (byte *)"world!";
         packet_two.len = 7;
         packet_two.id = 0x14;
+        packet_two.timestamp = micros();
 
         stream_can_packet(&packet_one);
         stream_can_packet(&packet_two);

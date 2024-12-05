@@ -79,7 +79,10 @@ static void broadcast_available()
         byte buf[buf_len];
 
         int marker = 0;
-        memcpy(buf, &(packet.id), sizeof(long));
+        memcpy(buf, &(packet.timestamp), sizeof(unsigned long));
+        marker += sizeof(unsigned long);
+
+        memcpy(buf + marker, &(packet.id), sizeof(long));
         marker += sizeof(long);
 
         memcpy(buf + marker, &(packet.len), sizeof(size_t));
@@ -142,6 +145,7 @@ static can_packet *copy_can_packet(const can_packet *packet)
     new_packet->data = buf;
     new_packet->len = packet->len;
     new_packet->id = packet->id;
+    new_packet->timestamp = packet->timestamp;
 
     return new_packet;
 }

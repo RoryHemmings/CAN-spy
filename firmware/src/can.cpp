@@ -47,6 +47,7 @@ static void can_rx_interrupt(int len) {
 
     can_packet packet;
     packet.id = CAN.packetId();
+    packet.timestamp = micros();
     packet.len = len;
     packet.data = recv_buffer;
 
