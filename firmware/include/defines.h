@@ -3,6 +3,9 @@
 
 #include "secrets.h"
 
+// Maximum of can packets allowed in broadcast queue between broadcasts
+const uint16_t MAX_CAN_PACKET_BACKUP = 100;
+
 #define DEBUG
 
 #ifdef DEBUG

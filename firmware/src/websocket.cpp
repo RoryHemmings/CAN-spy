@@ -1,6 +1,7 @@
 #include <WebSocketsClient.h>
 #include <cppQueue.h>
 
+#include "can.h"
 #include "defines.h"
 #include "websocket.h"
 
@@ -9,15 +10,22 @@ const int WEBSOCKET_RECONNECT_INTERVAL = 5000;
 const long BROADCAST_INTERVAL = 10; // milliseconds
 long last_broadcast = 0;
 
-// Maximum of can packets allowed in broadcast queue between broadcasts
-const uint16_t MAX_CAN_PACKET_BACKUP = 100;
 cppQueue can_packet_queue(sizeof(can_packet), MAX_CAN_PACKET_BACKUP);
+
+/**
+ * Static circular buffer to store can_packet data between broadcasts.
+ * Circumvents dynamic memory allocation.
+ */
+byte can_packet_buffers[MAX_CAN_PACKET_BACKUP][MAX_CAN_PACKET_SIZE];
+can_packet can_packets[MAX_CAN_PACKET_BACKUP];
+int next_can_packet = 0;
 
 WiFiClient client;
 WebSocketsClient websocket;
 
 static void broadcast_available();
 static void handle_websocket_event(WStype_t type, uint8_t *payload, size_t length);
+static can_packet *copy_can_packet(const can_packet *packet);
 
 void init_websocket()
 {
@@ -45,9 +53,15 @@ void loop_websocket()
     }
 }
 
-void stream_can_packet(can_packet *packet)
+void stream_can_packet(const can_packet *packet)
 {
-    can_packet_queue.push(packet);
+    if (can_packet_queue.isFull()) {
+        return;
+    }
+
+    // Pulls copy from temporary storage buffer
+    can_packet *packet_copy = copy_can_packet(packet);
+    can_packet_queue.push(packet_copy);
 }
 
 static void broadcast_available()
@@ -109,4 +123,25 @@ static void handle_websocket_event(WStype_t type, uint8_t *payload, size_t lengt
     case WStype_FRAGMENT_FIN:
         break;
     }
+}
+
+/**
+ * Creates copy of a given can_packet struct with copy memory pulled
+ * from in-between broadcast buffer.
+ */
+static can_packet *copy_can_packet(const can_packet *packet)
+{
+    if (next_can_packet >= MAX_CAN_PACKET_BACKUP) {
+        next_can_packet = 0;
+    }
+
+    can_packet *new_packet = &(can_packets[next_can_packet]);
+    byte *buf = can_packet_buffers[next_can_packet++];
+    memcpy(buf, packet->data, packet->len);
+
+    new_packet->data = buf;
+    new_packet->len = packet->len;
+    new_packet->id = packet->id;
+
+    return new_packet;
 }

@@ -6,6 +6,10 @@
 void init_websocket();
 void loop_websocket();
 
-void stream_can_packet(can_packet *packet);
+/**
+ * Stores queues a static copy of packet for streaming 
+ * upon next broadcast interval
+ */
+void stream_can_packet(const can_packet *packet);
 
 #endif
