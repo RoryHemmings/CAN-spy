@@ -8,7 +8,9 @@ setup(
     install_requires=[],
     entry_points={
         "console_scripts": [
-            "can-spy=scripts.repl:main",
+            "can-listen=scripts.listen:main",
+            "can-spoof=scripts.spoof:main",
+            "can-replay=scripts.replay:main",
         ],
     },
     long_description=open("README.md").read(),

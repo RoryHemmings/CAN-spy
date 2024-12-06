@@ -1,6 +1,6 @@
 import pickle
 
-from can_packet import CanPacket
+from .can_packet import CanPacket
 
 
 def parse_can_sequence_file(path: str) -> list[CanPacket]:
