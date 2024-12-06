@@ -38,8 +38,14 @@ void init_can()
     CAN.onReceive(can_rx_interrupt);
 }
 
+void write_can_packet(const can_packet *packet) {
+    CAN.beginPacket(packet->id);
+    CAN.write(packet->data, min(packet->len, MAX_CAN_PACKET_SIZE));
+    CAN.endPacket();
+}
+
 static void can_rx_interrupt(int len) {
-    DEBUG_PRINT("Received Packet ");
+    // DEBUG_PRINT("Received Packet ");
 
     if (CAN.packetRtr()) {
         // DEBUG_PRINT("RTR ");

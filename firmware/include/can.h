@@ -21,5 +21,6 @@ typedef struct {
 } can_packet;
 
 void init_can();
+void write_can_packet(const can_packet *packet);
 
 #endif

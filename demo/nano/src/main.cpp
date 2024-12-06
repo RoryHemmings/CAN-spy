@@ -26,7 +26,8 @@ const unsigned long MPC2515_CLOCK_FREQ = 8e6;
 #ifdef DEBUG
 const unsigned long loop_interval = 1000; // tick every second
 #else
-const unsigned long loop_interval = 10; // tick every 10 milliseconds
+// const unsigned long loop_interval = 10; // tick every 10 milliseconds
+const unsigned long loop_interval = 1000; // tick every 10 milliseconds
 #endif
 
 
@@ -73,7 +74,7 @@ void send_packet(float ax, float ay, float az) {
     DEBUG_PRINTLN(angle);
 
     CAN.beginPacket(0x12);
-    CAN.write((byte) angle); // Write all 4 bytes of ay
+    CAN.write((byte) angle);
     CAN.endPacket();
 
     DEBUG_PRINTLN("Sent Packet");

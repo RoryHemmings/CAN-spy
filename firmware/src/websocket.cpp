@@ -24,8 +24,9 @@ WiFiClient client;
 WebSocketsClient websocket;
 
 static void broadcast_available();
-static void handle_websocket_event(WStype_t type, uint8_t *payload, size_t length);
 static can_packet *copy_can_packet(const can_packet *packet);
+static bool deserialize_can_packet(const byte *buf, can_packet &packet);
+static void handle_websocket_event(WStype_t type, uint8_t *payload, size_t length);
 
 void init_websocket()
 {
@@ -69,29 +70,56 @@ static void broadcast_available()
     // Drain queue of can_packets
     can_packet packet;
     while (can_packet_queue.pop(&packet)) {
-        DEBUG_PRINT("Broadcasting can packet with id: ");
-        DEBUG_PRINT(packet.id);
-        DEBUG_PRINT(" and len: ");
-        DEBUG_PRINTLN(packet.len);
+        if (!websocket.isConnected()) {
+            continue;
+        }
+
+        // DEBUG_PRINT("Broadcasting can packet with id: ");
+        // DEBUG_PRINT(packet.id);
+        // DEBUG_PRINT(" and len: ");
+        // DEBUG_PRINTLN(packet.len);
 
         // Serialize can_packet struct into byte array
         size_t buf_len = sizeof(can_packet) - sizeof(byte *) + (packet.len * sizeof(byte));
         byte buf[buf_len];
 
         int marker = 0;
-        memcpy(buf, &(packet.timestamp), sizeof(unsigned long));
+        memcpy(buf, &packet.timestamp, sizeof(unsigned long));
         marker += sizeof(unsigned long);
 
-        memcpy(buf + marker, &(packet.id), sizeof(long));
+        memcpy(buf + marker, &packet.id, sizeof(long));
         marker += sizeof(long);
 
-        memcpy(buf + marker, &(packet.len), sizeof(size_t));
+        memcpy(buf + marker, &packet.len, sizeof(size_t));
         marker += sizeof(size_t);
 
         memcpy(buf + marker, packet.data, packet.len * sizeof(byte));
 
         websocket.sendBIN(buf, buf_len);
     }
+}
+
+/**
+ * Note: does not allocate space for underlying can data
+ */
+static bool deserialize_can_packet(const byte *buf, int buf_len, can_packet &packet)
+{
+    int marker = 0;
+    memcpy(&packet.timestamp, buf, sizeof(unsigned long));
+    marker += sizeof(unsigned long);
+
+    memcpy(&packet.id, buf + marker, sizeof(long));
+    marker += sizeof(long);
+
+    memcpy(&packet.len, buf + marker, sizeof(size_t));
+    marker += sizeof(size_t);
+
+    if (marker + packet.len > buf_len) {
+        return false;
+    }
+
+    memcpy(packet.data, buf + marker, packet.len);
+    return true;
 }
 
 static void handle_websocket_event(WStype_t type, uint8_t *payload, size_t length)
@@ -114,14 +142,26 @@ static void handle_websocket_event(WStype_t type, uint8_t *payload, size_t lengt
         // websocket.sendTXT("message here");
         break;
     case WStype_BIN:
-        // send data to server
-        // websocket.sendBIN(payload, length);
+        byte data[MAX_CAN_PACKET_SIZE];
+        can_packet packet;
+        packet.data = data;
+        deserialize_can_packet(payload, length, packet);
+
+        // DEBUG_PRINTLN((int) packet.data[0]);
+        // DEBUG_PRINTLN(packet.timestamp);
+        // DEBUG_PRINTLN(packet.id);
+        // DEBUG_PRINTLN(packet.len);
+
+        write_can_packet(&packet);
         break;
     case WStype_ERROR:
     case WStype_FRAGMENT_TEXT_START:
     case WStype_FRAGMENT_BIN_START:
     case WStype_FRAGMENT:
     case WStype_PING:
+        // Respond to keep-alive ping
+        websocket.sendPing();
+        break;
     case WStype_PONG:
     case WStype_FRAGMENT_FIN:
         break;
