@@ -76,31 +76,31 @@ async def handle_client(websocket):
     # filename = f"data_{file_timestamp}.can"
     # output_file = open(filename, 'ab')
 
-    # async for message in websocket:
-    #     if isinstance(message, bytes):
-    #         print("Received binary message:")
+    async for message in websocket:
+        if isinstance(message, bytes):
+            print("Received binary message:")
 
-    #         can_packet = deserialize_can_packet(message)
-    #         print(can_packet)
-    #         pickle.dump(can_packet, output_file)
-    #     else:
-    #         print(f"Received text message: {message}")
+            can_packet = deserialize_can_packet(message)
+            print(can_packet)
+            # pickle.dump(can_packet, output_file)
+        else:
+            print(f"Received text message: {message}")
 
     # output_file.close()
 
     # angle = random.randint(15, 60)
-    angle = 30
-    while True:
-        print("Set angle to 30")
-        packet = CanPacket(
-            data=angle.to_bytes(1, byteorder='little', signed=True),
-            timestamp=100, # Arbitrary in this case
-            can_id=0x10,
-            length=1
-        )
+    # angle = 30
+    # while True:
+    #     print("Set angle to 30")
+    #     packet = CanPacket(
+    #         data=angle.to_bytes(1, byteorder='little', signed=True),
+    #         timestamp=100, # Arbitrary in this case
+    #         can_id=0x10,
+    #         length=1
+    #     )
 
-        await websocket.send(serialize_can_packet(packet))
-        await asyncio.sleep(0.5)
+    #     await websocket.send(serialize_can_packet(packet))
+    #     await asyncio.sleep(0.5)
 
 async def start_websocket_server():
     stop_event = asyncio.Event()

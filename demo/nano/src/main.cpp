@@ -26,8 +26,7 @@ const unsigned long MPC2515_CLOCK_FREQ = 8e6;
 #ifdef DEBUG
 const unsigned long loop_interval = 1000; // tick every second
 #else
-// const unsigned long loop_interval = 10; // tick every 10 milliseconds
-const unsigned long loop_interval = 1000; // tick every 10 milliseconds
+const unsigned long loop_interval = 10; // tick every 10 milliseconds
 #endif
 
 

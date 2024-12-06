@@ -5,7 +5,7 @@
 #include "defines.h"
 #include "websocket.h"
 
-const int WEBSOCKET_RECONNECT_INTERVAL = 5000;
+const int WEBSOCKET_RECONNECT_INTERVAL = 1000;
 
 const long BROADCAST_INTERVAL = 10; // milliseconds
 long last_broadcast = 0;
