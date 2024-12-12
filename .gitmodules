@@ -1,0 +1,24 @@
+[submodule "demo/nano/lib/Arduino_LSM6DS3"]
+	path = demo/nano/lib/Arduino_LSM6DS3
+	url = https://github.com/arduino-libraries/Arduino_LSM6DS3
+[submodule "demo/nano/lib/arduino-CAN"]
+	path = demo/nano/lib/arduino-CAN
+	url = https://github.com/sandeepmistry/arduino-CAN
+[submodule "demo/uno/lib/arduino-CAN"]
+	path = demo/uno/lib/arduino-CAN
+	url = https://github.com/sandeepmistry/arduino-CAN
+[submodule "demo/uno/lib/Servo"]
+	path = demo/uno/lib/Servo
+	url = https://github.com/arduino-libraries/Servo
+[submodule "firmware/lib/arduino-CAN"]
+	path = firmware/lib/arduino-CAN
+	url = https://github.com/sandeepmistry/arduino-CAN
+[submodule "firmware/lib/arduinoWebSockets"]
+	path = firmware/lib/arduinoWebSockets
+	url = https://github.com/Links2004/arduinoWebSockets
+[submodule "firmware/lib/WiFiNINA"]
+	path = firmware/lib/WiFiNINA
+	url = https://github.com/arduino-libraries/WiFiNINA
+[submodule "firmware/lib/Queue"]
+	path = firmware/lib/Queue
+	url = https://github.com/SMFSW/Queue
