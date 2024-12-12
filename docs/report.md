@@ -150,7 +150,7 @@ Three components
   * Listens for CAN traffic, buffers it, batch streams it to C2 server every `25ms`
   * Listens for incoming commands from C2 server websocket, and writes to bus based on those commands
 
-You can view the full system hardware schematic [here](../hardware/hardware-schematic.pdf).
+You can view the full system hardware schematic [here](media/hardware-schematic.pdf).
 
 ![Hardware Setup with Multimeter](media/hardware-setup/multimeter.jpg)
 *The entire testbed operates at ~115 milliamps*
