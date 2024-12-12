@@ -26,13 +26,45 @@ This section should cover the following items:
 * Requirements for Success: What skills and resources are necessary to perform the project?
 * Metrics of Success: What are metrics by which you would check for success?
 
-The Controller Are Network (CAN) protocol is an extremely common serial communication protocol used frequently in large complex systems like automobiles, ships, trains, planes, factories, and other industrial technology. While robust and flexible, the standard is relatively old, and thus doesn't hold up under modern security standards. As a result, the standard is a serious weak point in critical infrastructure and thus in recent years it has drawn much attention from bad actors and security researchers alike. The goal of this project is to provide an extensible platform for developing CAN exploits for use by security researchers when protecting against these kinds of attacks.
+The Controller Area Network (CAN) protocol is an extremely common serial communication protocol used frequently in large complex systems like automobiles, ships, trains, planes, factories, and other industrial technologies. While robust and flexible, the standard is relatively old, and thus doesn't hold up under modern security standards. As a result, the standard is a serious weak point in critical infrastructure and thus in recent years it has drawn much attention from bad actors and security researchers alike. The goal of this project is to provide an extensible platform for developing CAN exploits for use by security researchers when protecting against these kinds of attacks.
+
+Currently the state of the art in this area is composed of three parts: OBD readers, actual attacks, and software simulators. However, few projects have actually combined all three into a single extensible platform.
+
+Novelty:
+* wireless, open source framework
+* CANH, CANL instead of OBD, more general than automobiles
+* flexible python framework
+* Although much of the backbone technology already exists, the goal of this project is to unify everything into an easy to use flexible platform for developing CAN exploits to make it as easy as possible for engineers to harden their systems.
+
+Potential impact 
+* Allows for prototyping of new exploits
+  * Useful tool for researchers
+  * Useful tool for engineers who want to harden their system (can test attacks)
+* Spread awareness of common attacks and lowers barrier of entry to using them
+  * Especially for engineers who might not be proficient in C programming and protocol inner-workings
+* Overall, make critical infrastructure safer
+
+Challenges:
+* Hardware development (CAN is rather complicated)
+* Whole system is rather complicated relative to the time constraints
+* Handling high bit rates CAN supports (batch optimization for streaming)
+
+Requirements for Success:
+* Byte level read/write access to the CAN bus along with python library to use it
+* Stock out of the box command line tools
+* CAN testbed system to demo the attacks
+
 
 # 2. Related Work
 
 * existing CAN attacks in theory
+  * replay
+  * spoofing
+  * dos - low priority flooding
 * OBD-II readers and writers
+  * many cables and devices while allow read/write access to the OBD-II port in a car. However these are limited in scope to OBD-II, and cannot be used to prototype attacks for more general systems.
 * Standard Linux Software tools
+  * There are linux software programs for reading and writing from the CAN bus but these require existing cables or connection devices, written in c, complicated platform for some engineers to understand or use. While someone extremely well versed in the CAN protocol, c programming, and linux untilities may be able to achieve similar results, most people aren't willing to go through that much effort as security is often an afterthought. The goal of this framework is to try and counteract this.
 
 # 3. Technical Approach
 
@@ -41,15 +73,43 @@ The Controller Are Network (CAN) protocol is an extremely common serial communic
 * High Level view of entire system
 * Purpose and rationale behind each piece
 
+![System Architecture](media/system-architecture.png)
+*High level system architecture diagram*
+
 ## Hardware
+
+![Hardware Schematic](media/hardware-schematic.png)
+*Mid-detail hardware schematic*
+
+![MCU to CAN interface](media/mcu-can-interface.png)
+*Note: the nano operates at 3.3v and thus requires a 3.3V-5V level shifter (TXS0108E) to communicate with the MCP2515 controller*
+
+
+![MCU Connections](media/mcu-connections.png)
+*Detailed connection diagram for the various microcontrollers and CAN controller/transciever chips*
 
 ### CAN-spy
 
 ### Demo
 
+You can view the full system hardware schematic [here](../hardware/hardware-schematic.pdf).
+
+![Hardware Setup with Multimeter](media/hardware-setup/multimeter.jpg)
+*The entire testbed operates at ~115 milliamps*
+
+![Hardware Setup](media/hardware-setup/standard.jpg)
+
+![Hardware Setup top down view](media/hardware-setup/top-down.jpg)
+*Top down view*
+
 ## Software
 
 * Websockets
+
+![Software Diagram](media/software-diagram.png)
+*Flowchart of data throughout software system*
+
+You can view the full software diagram [here](media/software-diagram.pdf).
 
 # 4. Evaluation and Results
 
