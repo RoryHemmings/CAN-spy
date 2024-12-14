@@ -69,14 +69,14 @@ Overall, the success of this project is determined by whether I can get the foll
 
 # 2. Related Work
 
-* existing CAN attacks in theory
-  * replay
-  * spoofing
-  * dos - low priority flooding
-* OBD-II readers and writers
-  * many cables and devices while allow read/write access to the OBD-II port in a car. However these are limited in scope to OBD-II, and cannot be used to prototype attacks for more general systems.
-* Standard Linux Software tools
-  * There are linux software programs for reading and writing from the CAN bus but these require existing cables or connection devices, written in c, complicated platform for some engineers to understand or use. While someone extremely well versed in the CAN protocol, c programming, and linux untilities may be able to achieve similar results, most people aren't willing to go through that much effort as security is often an afterthought. The goal of this framework is to try and counteract this.
+Most of the related work was covered in the [Current State of the Art](#current-state-of-the-art) section, however there are some other interesting areas of research devoted to the theory behind CAN security. Generally this research targets the discovery of more attacks and defense strageties. Attacks are divided into two categories, Protocol level attacks and Controller level attacks.
+
+Protocol level attacks take advange of vulnerabilities inherent in the protocol, and can thus be executed by writing cleverly crafted CAN packets to the bus. A couple notable ones are listed below.
+  * Replay Attacks. These are done by simply recording traffic from the CAN bus when an operation is taking place, and then replaying the recorded traffic at a later time to reproduce the operation. Replay attacks are by far the most common because of how easy they are to execute. You can have little to no understanding of how the system works and still easily execute the attack.
+  * Spoofing. This attack involves sending traffic that masquerades as traffic from another node in order to precisely control the behavior of the system. This attack is a little more difficult to pull off as it requires a base understanding of the system which can be garnered through reverse engineering of collected traffic.
+  * Denial of Service. This attack involves flooding the bus with extremely high priority packets in an attempt to collide with other packets in the system crippling its abilitiy to function properly.
+
+Controller level attacks require complete control over the CAN controller which is a specialized piece of hardware used to manage bitstream level operations. While I'm not an expert in this area of research it seems to be very active since access to the CAN controller lends itsself to far more insidious low level attacks. For example, protocol level attacks can be largely mitigated by encryption whereas Controller level attacks cannot.
 
 # 3. Technical Approach
 
@@ -283,24 +283,20 @@ More information on these scripts and the API can be found in the `can_spy` with
 
 ## Impact
 
-* Anyone with basic python skills and high level knowledge about CAN can test attacks on their system to make it more secure
-* Overall I spent a lot more time than expected on hardware design, but it paid off in the end
-* Learned a lot about Embedded Systems design, espcially the hardware aspect
+Overall, we achieved our requirements for success, and thus anyone with basic python skills and a high level knowledge of CAN now has the ability to test attacks on their system to make it more secure, granted the hardware is very clunky at the moment.
 
 ## Future plans
-* Potential for attack prototypes
-* Potential for wireless attacks
-* Future of wireless (eg. use lora instead of wifi)
-* More configuration for scripts
-* More hardware interfaces
-  * Keep atleast 2 sets of canh and canl lines exposed
-  * Add OBD-II connector as this is the most common domain
-* PCB for better form factor
-* Repl Environment for lower command and control latency. Used separate programs due to time constraints and for an MVP.
+
+While the current state of the project is mainly an MVP, there is a lot of potential for future plans. The primary focus for future plans is on improving the hardware. First, we want to create a custom PCB so that the hardware is usable outside of a development setting. This would be similar to the development hardware, except with a built-in OBD-II port in addition to standard `canh` and `canl` lines.
+
+Another main plan is to add support for LoRa, to enable extremely long range attacks. This would open the door to a whole host of novel attacks as they could be performed at extremely long ranges not achieveable by other wireless protocols.
+
+Regarding software, we would like to greatly increase the number of demo attack scripts to provide a library of attacks that any one can test against their system. Also, we would like to implement a REPL environment which maintains a constant websocket connection between attacks for rapid exploit testing and development when connected to the hardware. For example, you could perform a replay attack in a more user friendly way as the MVP requires the use of two different scripts.
 
 # 6. References
 
 1. Tindell K, (2020). "CAN Security: CAN Protocol Security White Paper". https://www.canislabs.com/downloads/2020-02-14-White-Paper-CAN-Security.pdf
 2. Bloom B. (2021). "WeepingCAN: A stealthy CAN Bus-off Attack". https://gedare.github.io/pdf/bloom_weepingcan_2021.pdf
 3. Ojha Y. (2019). "Car Hacking 101: Practical Guide to Exploiting CAN-Bus using Instrument Cluster Simulator". https://medium.com/@yogeshojha/car-hacking-101-practical-guide-to-exploiting-can-bus-using-instrument-cluster-simulator-part-i-cd88d3eb4a53
-4. https://docs.arduino.cc/learn/communication/can/
+4. "Create Your Own CAN Network With MCP2515 Modules and Arduino". https://lastminuteengineers.com/mcp2515-can-module-arduino-tutorial/
+5. https://docs.arduino.cc/learn/communication/can/
