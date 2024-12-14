@@ -300,5 +300,7 @@ More information on these scripts and the API can be found in the `can_spy` with
 
 # 6. References
 
-* CAN stuff, medium article for hardware, medium article for CAN intro, etc.
-* https://www.totalphase.com/blog/2024/11/can-transceiver-vs-can-controller-what-are-differences-how-are-they-used/
+1. Tindell K, (2020). "CAN Security: CAN Protocol Security White Paper". https://www.canislabs.com/downloads/2020-02-14-White-Paper-CAN-Security.pdf
+2. Bloom B. (2021). "WeepingCAN: A stealthy CAN Bus-off Attack". https://gedare.github.io/pdf/bloom_weepingcan_2021.pdf
+3. Ojha Y. (2019). "Car Hacking 101: Practical Guide to Exploiting CAN-Bus using Instrument Cluster Simulator". https://medium.com/@yogeshojha/car-hacking-101-practical-guide-to-exploiting-can-bus-using-instrument-cluster-simulator-part-i-cd88d3eb4a53
+4. https://docs.arduino.cc/learn/communication/can/
