@@ -1,7 +1,7 @@
 # Report
 
 # Table of Contents
-* Abstract
+* [Abstract](#abstract)
 * [Introduction](#1-introduction)
 * [Related Work](#2-related-work)
 * [Technical Approach](#3-technical-approach)
@@ -17,46 +17,57 @@ Provide a brief overview of the project objhectives, approach, and results.
 
 This section should cover the following items:
 
-* Motivation & Objective: What are you trying to do and why? (plain English without jargon)
-* State of the Art & Its Limitations: How is it done today, and what are the limits of current practice?
-* Novelty & Rationale: What is new in your approach and why do you think it will be successful?
-    * None of the pieces introduce new technology, the unification of the pieces and wireless python framework are the novelty
-* Potential Impact: If the project is successful, what difference will it make, both technically and broadly?
-* Challenges: What are the challenges and risks?
-* Requirements for Success: What skills and resources are necessary to perform the project?
-* Metrics of Success: What are metrics by which you would check for success?
+## Motivation and Objective
+The Controller Area Network (CAN) protocol is an extremely common serial communication protocol used frequently in large complex systems like automobiles, ships, trains, planes, factories, and other industrial technologies. It's priority based arbitration design makes it appealing to systems where reliability and real-time responses are critical. While robust and flexible, the standard is relatively old, and thus doesn't hold up under modern security standards. As a result, the standard is a serious weak point in critical infrastructure and thus in recent years it has drawn much attention from bad actors and security researchers alike. The goal of this project is to provide an extensible platform for developing CAN exploits for use by security researchers when protecting against these attacks.
 
-The Controller Area Network (CAN) protocol is an extremely common serial communication protocol used frequently in large complex systems like automobiles, ships, trains, planes, factories, and other industrial technologies. While robust and flexible, the standard is relatively old, and thus doesn't hold up under modern security standards. As a result, the standard is a serious weak point in critical infrastructure and thus in recent years it has drawn much attention from bad actors and security researchers alike. The goal of this project is to provide an extensible platform for developing CAN exploits for use by security researchers when protecting against these kinds of attacks.
+## Current State of the Art
+Currently, security researchers seeking to harden their system have a couple options. Most attacks in this field focus on automotive attacks as cars are the most prevalent users of CAN in our daily lives. As a result, a lot of the existing infrastructure is based around cars. One such example hardware is the OBD-II cable. OBD-II is the standard used to read information from a cars computer system. It provides a standard port which allows you to read from the internal CAN bus along with a couple other busses. This is almost always the hardware associated with CAN security research.
 
-Priority based arbitration makes it appealing to systems where reliability and real-time response is critical.
+Once you have access to the physical CAN bus via the OBD-II cable, you can read or write from the CAN bus using `can-utils`. This is a repository of command line tools which you can use to interact with the CAN bus.
 
-Currently the state of the art in this area is composed of three parts: OBD readers, actual attacks, and software simulators. However, few projects have actually combined all three into a single extensible platform.
+However, most security research is actually done in simulation. One such simulator is
 
-Novelty:
-* wireless, open source framework
-* CANH, CANL instead of OBD, more general than automobiles
-* flexible python framework
-* fairly cheap, could be produced for less than $20 a piece, probably less
-* Although much of the backbone technology already exists, the goal of this project is to unify everything into an easy to use flexible platform for developing CAN exploits to make it as easy as possible for engineers to harden their systems.
+Taking all of this into account, the current state of the art effectively involves developing your exploit in the simulator using `can-utils`, and then testing it using an OBD-II cable.
 
-Potential impact 
-* Allows for prototyping of new exploits
-  * Useful tool for researchers
-  * Useful tool for engineers who want to harden their system (can test attacks)
-* Spread awareness of common attacks and lowers barrier of entry to using them
-  * Especially for engineers who might not be proficient in C programming and protocol inner-workings
-* Overall, make critical infrastructure safer
+This can be effective for people trying to write attacks for existing cars, but it does little to address attacks while developing systems or non-automotive attacks. Additionally, using `can-utils` can be constricting if you need to develop more complex attacks. Also, testing and carrying out attacks require physical access to the CAN-bus. While there are wireless OBD-II readers, they are limited to systems using OBD-II. Finally, existing hardware solutions are relatively expensive, with wireless OBD-II readers costing up to $200.
 
-Challenges:
-* Hardware development (CAN is rather complicated)
-* Whole system is rather complicated relative to the time constraints
-* Handling high bit rates CAN supports (batch optimization for streaming)
+Few projects have unified all these pieces into one simple, extensible, and easy to use framework, which is what this project aims to do.
 
-Requirements for Success:
-* Byte level read/write access to the CAN bus along with python library to use it
-* Stock out of the box command line tools
-* CAN testbed system to demo the attacks
+## Novelty and Rationale
 
+While no individual part of the project is particularly novel, the unificafion of all parts is where it becomes truly novel.
+
+While wireless OBD-II readers exist, they are limited to automotive applications and have little purpose for security research due to their lack of support for complex attacks. Also, they almost exclusively use Bluetooth. While the initial iteration of this project uses WiFi, the hardware and software frameworks are modular open source, meaning it would be easy to extend the capabilities in the future to support much longer range attacks protocols like LoRa which could open the door to a huge amount of new attacks.
+
+Additionally, this framework is geared towards the development of safer systems instead of interacting with existing systems. As such, it's hardware interface is raw CAN as opposed to OBD-II providing more flexibility across domains other than automotive.
+
+As far as I know, there are no existing python frameworks that allow you to wirelessly read/write to a physical CAN bus, and thus this is the first of it's kind.
+
+Finally, the device can likely be mass produced for less than $20 a piece given that it simply requires an MCU, CAN hardware, and some sort of wireless module.
+
+## Potential impact
+
+The overall goal of this project is to help improve the security of digital infrastructure by developing a tool which can be useful for security researchers to efficiently hunt for potential vulnerabilities in CAN systems. It can also be used by engineers when developing new systems to keep them more secure, as well as less experienced. The list of command line scripts (while currently small) of common attacks will also be an easy way for researchers to make sure their system holds up against the most trivial of attacks before needing to develop anything fancy.
+
+The extensible python package is also great as it lowers the barrier to entry significantly for CAN security. Existing solutions require expert knowledge in C and linux which some people might not have. This project gives makes it easy to develop exploits and search for vulnerabilities without extensive knowledge of these systems. Even for experienced users, it may make the process of security research more efficient and less error prone.
+
+## Challenges:
+The main challenge in completing this project is developing the hardware. For reasons mentioned in the technical section, CAN is actually rather complicated and requires several additional pieces of hardware to get working. Testing the hardware also requires a mock system (testbed), which will need to be designed and implemented. This is compounted with my limited background in hardware and reasonably short time constraints. 
+
+Another challenge is reliable websocket connections between the software C2 server and the hardware. In my experience, getting websockets to run reliably on Arduino is quite difficult. Many libraries are buggy, or simply don't work as intended. Using websockets in python also requires asynchronous programming paradigms which can be tricky to get correct without bugs.
+
+Finally, reliably streaming CAN traffic via websocket is difficult given that the max bitrate of CAN is 1 megabit per second. While WiFi can easily handle this, we eventually want the project to support other wireless technologies such as LoRa and Bluetooth so we need to address this bottleneck.
+
+## Requirements for Success:
+In order for this project to succeed, I will need the available hardware and advice on how to implement the hardware for the actual device along with baseline electrical engineering skills and knowledge. This is all available via Amazon, IEEE, and the makerspace. The software skills required include Python programming, C programming, embedded C practices, and network programming (especially websockets) all of which I have proficiency in.
+
+## Metrics for Success
+Overall, the success of this project is determined by whether I can get the following features working.
+
+* CAN system testbed with two mock ECU's, a sensor (IMU) and actuator (servo)
+* Byte level read/write access to the physical CAN bus
+* A python package which allows persistent websocket connection and remote read/write access to CAN bus via the device.
+* Several out of the box command line utilities for common attack and workflows
 
 # 2. Related Work
 
@@ -207,16 +218,16 @@ Probably the most common type of CAN attack is the replay attack. This attack co
 
 Using our framework, you can perform replay attacks using a combination of two command line programs.
 
-First you can use the `listen` program to record activity into a file. This file simply contains the serialized version of the list of `CanPacket`s.
+First you can use the `can-listen` program to record activity into a file. This file simply contains the serialized version of the list of `CanPacket`s.
 
 ```
-listen -o example.can
+can-listen -o example.can
 ```
 
-Next you can use the `replay` program to read one of these files and write the recorded activity to the bus.
+Next you can use the `can-replay` program to read one of these files and write the recorded activity to the bus.
 
 ```
-replay -f example.can
+can-replay -f example.can
 ```
 
 ### Listening
@@ -235,6 +246,8 @@ replay -f example.can
 * Anyone with basic python skills and high level knowledge about CAN can test attacks on their system to make it more secure
 * Overall I spent a lot more time than expected on hardware design, but it paid off in the end
 * Learned a lot about Embedded Systems design, espcially the hardware aspect
+
+* Multiple can_spy devices?
 
 ## Future plans
 * Potential for attack prototypes
