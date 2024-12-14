@@ -11,11 +11,9 @@
 
 # Abstract
 
-Provide a brief overview of the project objhectives, approach, and results.
+This project aims to create an extensible platform for developing and testing Controller Area Network (CAN) exploits, addressing the security vulnerabilities inherent in the widely-used CAN protocol. Despite being robust and reliable, CAN's age and lack of modern security measures expose critical infrastructure, including automotive and industrial systems, to potential attacks. Current research tools often focus on automotive applications, require physical access to the CAN bus, and are expensive or limited in functionality. This project proposes a novel, modular, and open-source framework that allows for wireless CAN communication and can be easily extended to support more complex attacks. By unifying hardware and software components, it simplifies the process for security researchers and engineers, lowering the barrier to entry for CAN security testing. The platform’s low-cost design and extensibility aim to foster broader use in both automotive and non-automotive systems while providing tools for secure CAN system development.
 
 # 1. Introduction
-
-This section should cover the following items:
 
 ## Motivation and Objective
 The Controller Area Network (CAN) protocol is an extremely common serial communication protocol used frequently in large complex systems like automobiles, ships, trains, planes, factories, and other industrial technologies. It's priority based arbitration design makes it appealing to systems where reliability and real-time responses are critical. While robust and flexible, the standard is relatively old, and thus doesn't hold up under modern security standards. As a result, the standard is a serious weak point in critical infrastructure and thus in recent years it has drawn much attention from bad actors and security researchers alike. The goal of this project is to provide an extensible platform for developing CAN exploits for use by security researchers when protecting against these attacks.
@@ -141,21 +139,60 @@ You can view the full system hardware schematic [here](media/hardware-schematic.
 
 ## Software
 
+The two main pieces of software (in addition to the comparatively simple testbed software) were the can-spy firmware and the python package used to connect with it.
+
 ### Firmware
 
-* Reads and writes using arduino-CAN library
-* websockets are most widely supported streaming technology
-* streaming a new websocket message each tick is too slow
-* instead we queue up to 1000 CAN messages at a time and then broadcast every `25ms` in a single websocket message
-  * simply calculates buffer size, puts each field of data into the buffer, appends data
-* statically allocate these can packets for performance and to avoid heap fragementation given the high volume of messages
+The firmware was written in C++ using the Arduino framework along with platformio and it performs reads and writes to the CAN bus using the arduino-CAN library. It's main responsibilities are as follows.
+* Streaming CAN traffic. Whenever a new CAN packet is received, a hardware interrupt is triggered which queues a packet the packet for streaming. This queue is periodically emptied every `25ms` when all the CAN packets inside of it are serialized into a large buffer which is then delivered to C2 Server via the websocket connection. Note that there may be extremely large volumes of CAN packets, and thus we queue up to 1000 of them so the queue and buffer can be statically allocated. Additionally, we statically allocate all 1000 CAN packets statically. This is done to to bolster performance and avoid heap fragmentation by preventing large amounts of heap allocation.
+* Writing CAN traffic. Whenever the device receives a write request from the C2 server, it will come in the form of a serialized CAN packet. This packet is then deserialized and simply written to the bus.
+* Managing wireless connections. The device connects to the C2 server using WiFi and Websockets. WiFi was choosen out of convenience for libraries, however the framework could be easily extended to use other technologies in the future. Websockets on the other hand are practically ubiquitous when it comes to arduino programming, and they are also as performant as regular sockets so they were an obvious choice. Our code makes use of the WiFiNINA library and the arduinoWebSockets libraries.
 
-### Python Library
+### Python Package
 
-* Manages websocket connections asyncronously with [asyncio]() and [websockets]()
-* Provides simple `CanPacket` abstraction which user can use.
-* Reading and writing capabilities
-  * Makes use of aforementioned serialization and deserialization scheme
+The Python package is located in the `can_spy` directory in the repository and it's infrastructure is managed using `setuptools`. You can find documentation on how to install it in the package `README.md`.
+
+The package itsself provides a couple utilities, but it's main goal is to provide simple primatives which allow arbitrary byte level read/write access to the CAN bus. Each CAN packet is represented using the following structure.
+
+```py
+@dataclass
+class CanPacket:
+    """Represents a single can_packet"""
+    data: bytes
+    timestamp: int
+    can_id: int
+    length: int 
+
+    def serialize(self) -> bytes:
+      ...
+
+    @classmethod
+    def deserialize(cls, buffer: bytes) -> CanPacket:
+      ...
+```
+
+The data, can_id, and length are all analogous to the same fields in actual CAN packets. The timestamp represents the number of microseconds the packet was received after the can-spy firmware started running. It is really only used to distinguish packets in large sequence files for use in replay attacks, so it can be ignored when writing.
+
+The package also introduces the `C2Server` primative which is used to connect with the can-spy device.
+
+```py
+class C2Server:
+    """C2 server used to handle connection with hardware"""
+
+    def __init__(self,
+                 server_address: str = "0.0.0.0",
+                 server_port: int = 3005,
+                 client_handler = None):
+      ...
+    
+    def serve_forever(self):
+      ...
+
+    async def start_websocket_server(self):
+      ...
+```
+
+The C2 sever manages websocket connections using `asyncio` and `websockets`. Finally, there are several command line utilities which perform common attacks, but those are discussed more in the next section.
 
 ![Software Diagram](media/software-diagram.png)
 *Flowchart of data throughout software system*
@@ -164,14 +201,43 @@ You can view the full software diagram [here](media/software-diagram.pdf).
 
 # 4. Evaluation and Results
 
-* List of attacks along with demos
-
 As previously stated, this project is not a traditional research project and thus the evaluation is more qualatative and will consist mostly of demos and example code.
 
-The most powerful part of the python framework is that it allows you to arbitrarily read and write bytes to the CAN bus which means it is capable or remotely performing any protocol level attack without direct physical access to the CAN BUS. You can do so using the following python API.
+The most powerful part of the python framework is that it allows you to arbitrarily read and write bytes to the CAN bus which means it is capable or remotely performing any protocol level attack without direct physical access to the CAN BUS. For example, lets say you wanted to perform a spoofing attack specific to your system where you spoofed sensor readings. You could use the script below to do so.
 
-```
-api
+```py
+#!/usr/bin/python3
+
+import asyncio
+import random
+
+from can_spy.can_packet import CanPacket
+from can_spy.c2_server import C2Server
+
+
+async def handle_client(websocket):
+    angle = random.randint(15, 60)
+    angle = 30
+    while True:
+        print("Set angle to 30")
+        packet = CanPacket(
+            data=angle.to_bytes(1, byteorder='little', signed=True),  # Actual byte level payload
+            timestamp=0, # Arbitrary in this case
+            can_id=0x10,
+            length=1
+        )
+
+        await websocket.send(packet.serialize())
+        await asyncio.sleep(0.5)
+
+def main():
+    """Spoofing attack example script"""
+
+    c2 = C2Server(client_handler=handle_client)
+    c2.serve_forever()
+        
+if __name__ == "__main__":
+    main()
 ```
 
 While the read/write capability is probably the most useful for researchers developing custom attacks, some attacks are so common that I've written some out of the box command line programs to perform them automatically. These tools also act as a starting point for researchers as they can easily check their system for obvious or common vulnerabilities using these tools.
@@ -196,22 +262,30 @@ can-replay -f example.can
 
 ### Listening
 
+As previously mentioned, you can use the `can-listen` script to dump CAN traffic from the device, however you can also use the following options to control more details.
 
+```
+usage: can-listen [-h] [-o OUTFILE] [-s] [-n]
 
-### Dos Attack
+Records and serializes websocket activity to a pickle file for later examination or use in replay attack.
 
+options:
+  -h, --help            show this help message and exit
+  -o OUTFILE, --outfile OUTFILE
+                        Path of the file to save recorded CAN activity to.
+  -s, --no-stdout       Hides incoming CAN activity from stdout. Can help reduce latency.
+  -n, --no-file         Prevents incoming CAN activity from being written to a file if present.
+```
 
+More information on these scripts and the API can be found in the `can_spy` within the [Github Repo](https://github.com/RoryHemmings/CAN-spy).
 
 # 5. Discussion and Conclusions
 
 ## Impact
 
-* As previously mentioned, a lot of this technology already existed, but now it is unified in a modular and easy to use open source framework
 * Anyone with basic python skills and high level knowledge about CAN can test attacks on their system to make it more secure
 * Overall I spent a lot more time than expected on hardware design, but it paid off in the end
 * Learned a lot about Embedded Systems design, espcially the hardware aspect
-
-* Multiple can_spy devices?
 
 ## Future plans
 * Potential for attack prototypes
@@ -219,11 +293,10 @@ can-replay -f example.can
 * Future of wireless (eg. use lora instead of wifi)
 * More configuration for scripts
 * More hardware interfaces
-  * Keep atleast 2 canh and canl lines exposed
+  * Keep atleast 2 sets of canh and canl lines exposed
   * Add OBD-II connector as this is the most common domain
 * PCB for better form factor
-
-Repl Environment for lower command and control latency. Used separate programs due to time constraints and for an MVP.
+* Repl Environment for lower command and control latency. Used separate programs due to time constraints and for an MVP.
 
 # 6. References
 
