@@ -84,36 +84,31 @@ Overall, the success of this project is determined by whether I can get the foll
 
 ## System Design
 
-Three components
+At a high level, the system consists of three components. First, is the can-spy hardware device. This device effectively acts as a bridge between the python package and the physical can bus. It is wirelessly enabled so that it can connect via websockets to a command and controller (C2) server running on a laptop. Its responsibilities include reading and writing bytes to the CAN bus, streaming the data to the C2 server, and listening for instructions from the C2 server.
 
-* CAN spy device
-  * can tap into canh and canl lines, requires controller and transciever (more on that later)
-  * wireless enabled to connect to C2 server on a laptop via websockets
-  * reads and writes to bus and relays/listens via websockets
-* C2 server running on laptop
-  * Receives streamed CAN traffic from device
-  * Sends commands to write to the bus via the device
-  * running python with websocket based architecture
-  * Uses python library
-* Testbed for developing hardware and testing attacks, composed of Two mock ECUS
-  * Sensor: IMU + MCU
-    * relays accelerometer data across the CAN bus
-  * Actuator: Servo + MCU
-    * reads sensor data from CAN bus
-    * matches Servo angle with accelerometer angle so servo and IMU are at proportional angles
-  * Meant to mimic a real CAN system
+Next, the command and controller (C2) server. This server provides an interface for the device to the user. This server and the associated python package allow the user to read and write bytes arbitrarily to the CAN bus over the network.
 
+Finally, the testbed. The testbed is meant to mimic a real CAN system so that we can actually develop the other two pieces. It consists of 2 mock ECUs. The first is an IMU connected to a microcontroller which writes sensor readings to the CAN-bus for the other ECU to read. The second consists of a servo and a microcontroller and listens for sensor readings from the first ECU which are then processed and used to match the servo angle with that of the IMU.
 
 ![System Architecture](media/system-architecture.png)
 *High level system architecture diagram*
 
 ## Hardware
 
-* Mixture of 3.3v and 5v pieces
-* Level shifters, 12v to 5v power supply and regulator to power entire system
+This implementation required three microcontrollers along with some CAN hardware (mentioned later), and a 5V power supply to run. The main challenge when designing this hardware was the mixture of 3.3v and 5v devices which was addressed with the use of level shifters.
 
 ![Hardware Schematic](media/hardware-schematic.png)
 *Mid-detail hardware schematic*
+
+### CAN Requirements
+
+Creating a CAN bus from scratch is actually rather complicated and requires a couple pieces of specialized hardware. A CAN bus is composed of two lines `canh` and `canl`. To write data to these lines, you need both a CAN controller and a CAN tranceiver.
+
+The CAN controller is responsible for converting packets into bitstreams and vice-versa. It also buffers received bits until they form full packets. Few microcontrollers have these built-in, so you generally need a standalone controller. One such controller is the MCP2515 which operates at 5v and has an SPI interface. It also triggers a hardware interrupt whenever it receives a packet which is incredibly convenient on the software side.
+
+The CAN transceiver is the hardware which actually writes to the `canh` and `canl` lines after receiving bits from the CAN controller. It's main job is to convert logic levels to differential signals and vice-versa and it pretty much acts as a middle-man between the CAN controller and the CAN bus. Virtually no microcontrollers have these built in (except in extremely specialized cases eg. NXPLPC11C00) so you generally have to use a standalone one like the TJA1050.
+
+Luckily there's a development board which combines both the MCP2515 and the TJA1050 which we ended up using for this project.
 
 ![MCU to CAN interface](media/mcu-can-interface.png)
 *Note: the nano operates at 3.3v and thus requires a 3.3V-5V level shifter (TXS0108E) to communicate with the MCP2515 controller*
@@ -122,44 +117,17 @@ Three components
 ![MCU Connections](media/mcu-connections.png)
 *Detailed connection diagram for the various microcontrollers and CAN controller/transceiver chips*
 
-### CAN Requirements
+### Testbed
 
-* Raw can is just two lines, canh and canl
-* highly specialized, and runs at a pretty fast clock speed, requires specialized hardware to actually connect to the bus for reliable packet transfer
-* CAN controller - eg. MCP2515
-  * Convers packets into bitstream and vice-versa
-  * Buffers bits into packet which is sent to mcu (via hardware interrupt in case of MCP2515)
-  * Few micocontrollers have these built in
-* CAN transceiver - eg. TJA1050
-  * Actually reads and writes to `canh` and `canl`
-  * Converts differential signals to logic levels and vice-versa
-  * Acts as middle man between CAN controller and physical bus
-  * Virtually no microcontrollers have these (except in extremely specialized cases eg. NXPLPC11C00)
+Recall that the testbed is composed of two mock ECUs: one which acts a sensor, and one which acts as an actuator.
 
-### Test Bed
+The sensor ECU is an Arduino Nano 33 iot which reads from its onboard IMU (LSM6DS3) and connects to the CAN bus using the MCP2515 + TJA1050 CAN board mentioned in the last section. However, this board runs at 3.3v and thus requires a level shifter to interact with the CAN board over SPI. For this, we used the TXS0108E 3.3v --> 5v level shifter. The nano simply reads `ay` from the IMU every `10ms` and normalizes its value as an integer between 0 and 90. Then it relays this integer as CAN packet with id `0x12`.
 
-* Sensor
-  * Arduino Nano 33 iot
-  * 3.3V, built in IMU (LSM6DS3)
-  * requires level shifter
-  * MCP2515 + TJA1050 board (5v)
-  * Simply reads ay from IMU, normalizes the value as an integer, and sends it across the wire every `10ms`
-* Actuator
-  * Arduino Uno (5v)
-  * MCP2515 + TJA1050 board
-  * Listens for IMU data from specific id
-  * Writes to servo [SG90](http://www.ee.ic.ac.uk/pcheung/teaching/DE1_EE/stores/sg90_datasheet.pdf)
-  * Matches servo position based on the reading every `1ms`
+The Actuator ECU is and Arduino Uno which writes to a standalone Servo [SG90](http://www.ee.ic.ac.uk/pcheung/teaching/DE1_EE/stores/sg90_datasheet.pdf) and reads from the CAN bus using the aforementioned CAN board. It reads from the CAN bus every `1ms` and then updates the servo position accordingly if it has received a new reading. One thing to note is that attempting to update the servo position too fast becomes problematic, so I implemented a basic smoothing algorithm to prevent this from being an issue.
 
 ### CAN-spy
 
-* Arduino Nano 33 iot
-  * Operates at 3.3v
-  * Supports Wifi and Bluetooth
-  * 3.3v --> 5v level shifter + MCP2515 + TJA1050 board
-  * Manages websocket connection with C2 Server
-  * Listens for CAN traffic, buffers it, batch streams it to C2 server every `25ms`
-  * Listens for incoming commands from C2 server websocket, and writes to bus based on those commands
+Similar to the sensor node in the testbed, the actual CAN-spy device is also an Arduino Nano 33 iot attached to an MCP2515 + TJA1050 board via SPI across a 3.3v --> 5v level shifter. However, this device has more responsibilities as it needs to manage its websocket connection, stream CAN traffic to the C2 server in batches every `25ms`, and write bytes to the bus based on the C2 servers demands.
 
 You can view the full system hardware schematic [here](media/hardware-schematic.pdf).
 
@@ -175,12 +143,8 @@ You can view the full system hardware schematic [here](media/hardware-schematic.
 
 ### Firmware
 
-#### Can Driver
 * Reads and writes using arduino-CAN library
-
-#### Websocket Management
-
-* Most widely supported streaming technology
+* websockets are most widely supported streaming technology
 * streaming a new websocket message each tick is too slow
 * instead we queue up to 1000 CAN messages at a time and then broadcast every `25ms` in a single websocket message
   * simply calculates buffer size, puts each field of data into the buffer, appends data
