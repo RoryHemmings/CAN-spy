@@ -1,5 +1,7 @@
 #!/usr/bin/python3
 
+import argparse
+
 from can_spy.c2_server import C2Server
 
 
