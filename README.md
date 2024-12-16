@@ -12,7 +12,7 @@ For more information visit the [project site](https://roryhemmings.com/CAN-spy)
 
 ## Basic library use
 
-For package setup details visit the [package readme](can_spy/README.md)
+The python package is located in the `can_spy` directory. For setup instructions and basic script usage visit the [package readme](can_spy/README.md)
 
 ### Spoofing Example:
 ```py
