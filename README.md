@@ -12,7 +12,7 @@ For more information visit the [project site](https://roryhemmings.com/CAN-spy)
 
 ## Basic library use
 
-For package setup details visit the [package readme](can-spy/README.md)
+For package setup details visit the [package readme](can_spy/README.md)
 
 ### Spoofing Example:
 ```py
