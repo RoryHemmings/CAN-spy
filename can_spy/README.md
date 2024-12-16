@@ -17,8 +17,12 @@ To install the package, run the following command **from the same directory as t
 pip install .
 ```
 
-Now you can run the cli using the following command.
+Now you can run the scripts like so.
 
 ```
-can-spy
+can-spoof
+
+can-listen -o "recorded.can"
+
+can-replay -f "recorded.can"
 ```

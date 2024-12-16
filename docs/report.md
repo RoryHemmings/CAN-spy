@@ -19,7 +19,7 @@ This project aims to create an extensible platform for developing and testing Co
 The Controller Area Network (CAN) protocol is an extremely common serial communication protocol used frequently in large complex systems like automobiles, ships, trains, planes, factories, and other industrial technologies. It's priority based arbitration design makes it appealing to systems where reliability and real-time responses are critical. While robust and flexible, the standard is relatively old, and thus doesn't hold up under modern security standards. As a result, the standard is a serious weak point in critical infrastructure and thus in recent years it has drawn much attention from bad actors and security researchers alike. The goal of this project is to provide an extensible platform for developing CAN exploits for use by security researchers when protecting against these attacks.
 
 ## Current State of the Art
-Currently, security researchers seeking to harden their system have a couple options. Most attacks in this field focus on automotive attacks as cars are the most prevalent users of CAN in our daily lives. As a result, a lot of the existing infrastructure is based around cars. One such example hardware is the OBD-II cable. OBD-II is the standard used to read information from a cars computer system. It provides a standard port which allows you to read from the internal CAN bus along with a couple other busses. This is almost always the hardware associated with CAN security research.
+Currently, security researchers seeking to harden their system have a couple options. Most attacks in this field focus on automotive attacks as cars are the most prevalent users of CAN in our daily lives. As a result, a lot of the existing infrastructure is based around cars. One such example hardware is the OBD-II cable. OBD-II is the standard used to read information from a cars computer system. It provides a standard port which allows you to read from the internal CAN bus along with a couple other buses. This is almost always the hardware associated with CAN security research.
 
 Once you have access to the physical CAN bus via the OBD-II cable, you can read or write from the CAN bus using `can-utils`. This is a repository of command line tools which you can use to interact with the CAN bus.
 
@@ -50,7 +50,7 @@ The overall goal of this project is to help improve the security of digital infr
 The extensible python package is also great as it lowers the barrier to entry significantly for CAN security. Existing solutions require expert knowledge in C and linux which some people might not have. This project gives makes it easy to develop exploits and search for vulnerabilities without extensive knowledge of these systems. Even for experienced users, it may make the process of security research more efficient and less error prone.
 
 ## Challenges:
-The main challenge in completing this project is developing the hardware. For reasons mentioned in the technical section, CAN is actually rather complicated and requires several additional pieces of hardware to get working. Testing the hardware also requires a mock system (testbed), which will need to be designed and implemented. This is compounted with my limited background in hardware and reasonably short time constraints. 
+The main challenge in completing this project is developing the hardware. For reasons mentioned in the technical section, CAN is actually rather complicated and requires several additional pieces of hardware to get working. Testing the hardware also requires a mock system (testbed), which will need to be designed and implemented. This is compounded with my limited background in hardware and reasonably short time constraints. 
 
 Another challenge is reliable websocket connections between the software C2 server and the hardware. In my experience, getting websockets to run reliably on Arduino is quite difficult. Many libraries are buggy, or simply don't work as intended. Using websockets in python also requires asynchronous programming paradigms which can be tricky to get correct without bugs.
 
@@ -74,7 +74,7 @@ Most of the related work was covered in the [Current State of the Art](#current-
 Protocol level attacks take advange of vulnerabilities inherent in the protocol, and can thus be executed by writing cleverly crafted CAN packets to the bus. A couple notable ones are listed below.
   * Replay Attacks. These are done by simply recording traffic from the CAN bus when an operation is taking place, and then replaying the recorded traffic at a later time to reproduce the operation. Replay attacks are by far the most common because of how easy they are to execute. You can have little to no understanding of how the system works and still easily execute the attack.
   * Spoofing. This attack involves sending traffic that masquerades as traffic from another node in order to precisely control the behavior of the system. This attack is a little more difficult to pull off as it requires a base understanding of the system which can be garnered through reverse engineering of collected traffic.
-  * Denial of Service. This attack involves flooding the bus with extremely high priority packets in an attempt to collide with other packets in the system crippling its abilitiy to function properly.
+  * Denial of Service. This attack involves flooding the bus with extremely high priority packets in an attempt to collide with other packets in the system crippling its ability to function properly.
 
 Controller level attacks require complete control over the CAN controller which is a specialized piece of hardware used to manage bitstream level operations. While I'm not an expert in this area of research it seems to be very active since access to the CAN controller lends itsself to far more insidious low level attacks. For example, protocol level attacks can be largely mitigated by encryption whereas Controller level attacks cannot.
 
@@ -100,7 +100,7 @@ This implementation required three microcontrollers along with some CAN hardware
 
 ### CAN Requirements
 
-Creating a CAN bus from scratch is actually rather complicated and requires a couple pieces of specialized hardware. A CAN bus is composed of two lines `canh` and `canl`. To write data to these lines, you need both a CAN controller and a CAN tranceiver.
+Creating a CAN bus from scratch is actually rather complicated and requires a couple pieces of specialized hardware. A CAN bus is composed of two lines `canh` and `canl`. To write data to these lines, you need both a CAN controller and a CAN transceiver.
 
 The CAN controller is responsible for converting packets into bitstreams and vice-versa. It also buffers received bits until they form full packets. Few microcontrollers have these built-in, so you generally need a standalone controller. One such controller is the MCP2515 which operates at 5v and has an SPI interface. It also triggers a hardware interrupt whenever it receives a packet which is incredibly convenient on the software side.
 
@@ -152,7 +152,7 @@ The firmware was written in C++ using the Arduino framework along with platformi
 
 The Python package is located in the `can_spy` directory in the repository and it's infrastructure is managed using `setuptools`. You can find documentation on how to install it in the package `README.md`.
 
-The package itsself provides a couple utilities, but it's main goal is to provide simple primatives which allow arbitrary byte level read/write access to the CAN bus. Each CAN packet is represented using the following structure.
+The package itsself provides a couple utilities, but it's main goal is to provide simple primitive which allow arbitrary byte level read/write access to the CAN bus. Each CAN packet is represented using the following structure.
 
 ```py
 @dataclass
@@ -201,7 +201,7 @@ You can view the full software diagram [here](media/software-diagram.pdf).
 
 # 4. Evaluation and Results
 
-As previously stated, this project is not a traditional research project and thus the evaluation is more qualatative and will consist mostly of demos and example code.
+As previously stated, this project is not a traditional research project and thus the evaluation is more qualitative and will consist mostly of demos and example code.
 
 The most powerful part of the python framework is that it allows you to arbitrarily read and write bytes to the CAN bus which means it is capable or remotely performing any protocol level attack without direct physical access to the CAN BUS. For example, lets say you wanted to perform a spoofing attack specific to your system where you spoofed sensor readings. You could use the script below to do so.
 
@@ -289,7 +289,7 @@ Overall, we achieved our requirements for success, and thus anyone with basic py
 
 While the current state of the project is mainly an MVP, there is a lot of potential for future plans. The primary focus for future plans is on improving the hardware. First, we want to create a custom PCB so that the hardware is usable outside of a development setting. This would be similar to the development hardware, except with a built-in OBD-II port in addition to standard `canh` and `canl` lines.
 
-Another main plan is to add support for LoRa, to enable extremely long range attacks. This would open the door to a whole host of novel attacks as they could be performed at extremely long ranges not achieveable by other wireless protocols.
+Another main plan is to add support for LoRa, to enable extremely long range attacks. This would open the door to a whole host of novel attacks as they could be performed at extremely long ranges not achievable by other wireless protocols.
 
 Regarding software, we would like to greatly increase the number of demo attack scripts to provide a library of attacks that any one can test against their system. Also, we would like to implement a REPL environment which maintains a constant websocket connection between attacks for rapid exploit testing and development when connected to the hardware. For example, you could perform a replay attack in a more user friendly way as the MVP requires the use of two different scripts.
 
